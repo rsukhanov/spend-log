@@ -1,0 +1,59 @@
+"use client"
+import { useEffect, useState } from "react"
+import { retrieveRawInitData } from "@telegram-apps/sdk";
+
+const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL;
+
+export default function VerifyTelegramWebApp({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<string | null>(null);  
+
+  useEffect(() => {
+    const verify = async () => {
+      let rawInitData;
+      try {
+        rawInitData = retrieveRawInitData();
+      } catch (error) {
+        window.location.href = TELEGRAM_BOT_URL!;
+        return;
+      }
+      if (!rawInitData) {
+        window.location.href = TELEGRAM_BOT_URL!;
+        return;
+      }
+
+      try {
+        const res = await fetch("api/verify_tg_webapp", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rawInitData }),
+        })
+        if(!res.ok){
+          setState('Server error! Try later');
+          return;
+        }
+        const data = await res.json();
+        if (!data.ok) {
+          setState("Error verifying Telegram Web App!" + data.error);
+          return;
+        }
+        setState("OK");
+      } catch (e) {
+        setState(`Internal error: ${e}`);
+      }
+    };
+
+    verify();
+  }, []);
+
+  if(state === "OK") {
+    return <>{children}</>;
+  }
+
+  if (state) {
+    return <p>{state}</p>;
+  }
+  
+
+  return <p>Verifying Telegram Web App...</p>;
+  
+}

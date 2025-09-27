@@ -1,7 +1,3 @@
 export default function Home() {
-  return (
-    <div>
-      
-    </div>
-  );
+  return <h1>SpendLog bot !!</h1>;
 }
