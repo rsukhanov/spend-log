@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import VerifyTelegramWebApp from "@lib/Components/verify_tg_webapp";
+import VerifyTelegramWebApp from "@lib/components/verify_tg_webapp";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
