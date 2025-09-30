@@ -4,7 +4,7 @@ import { useUserStore } from "@lib/userStore";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export default function AvatarBox() {
-  const { name, photo_url } = useUserStore();
+  const { name, photo_url, preferred_currency } = useUserStore();
 
   // return (
   //   <div className="flex flex-col items-center">

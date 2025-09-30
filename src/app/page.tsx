@@ -1,4 +1,5 @@
 import AvatarBox from "@lib/components/Avatar";
+import CurrencyModalExport from "@lib/components/currency-modal";
 
 export default function Home() {  
   return (
@@ -6,9 +7,11 @@ export default function Home() {
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Spend Log</h1>
         <div className="flex items-center space-x-3">
+          <CurrencyModalExport />
           <AvatarBox />
         </div>
-      </header>      
+      </header>
+      
     </div>
   );
 }

@@ -1,34 +1,35 @@
 import { create } from 'zustand'
+import { Currency } from './components/currency-modal';
 
 interface UserStore {
   id: string;
   photo_url?: string;
   name?: string;
-  prefered_currency?: string;
+  preferred_currency?: Currency;
   setUser: ({
     id, 
     photo_url, 
     name,
-    prefered_currency
+    preferred_currency
   }: {
     id: string;
     photo_url?: string;
     name?: string;
-    prefered_currency?: string;
+    preferred_currency?: Currency;
   }) => void;
-  setPreferedCurrency: (prefered_currency: string) => void;
+  setPreferedCurrency: (preferred_currency: Currency) => void;
 }
 
 export const useUserStore = create<UserStore>((set) => ({
   id: '',
   name: '',
   photo_url: '',
-
-  setUser: ({id, photo_url, name, prefered_currency}) => set({ 
+  preferred_currency: undefined,
+  setUser: ({id, photo_url, name, preferred_currency}) => set({ 
     id, 
     photo_url, 
     name,
-    prefered_currency
+    preferred_currency
   }),
-  setPreferedCurrency: (prefered_currency: string) => set({ prefered_currency })
+  setPreferedCurrency: (preferred_currency: Currency) => set({ preferred_currency })
 }))
