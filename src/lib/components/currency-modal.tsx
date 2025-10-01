@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@lib/components/ui/dialog"
 import { useUserStore } from "@lib/userStore"
-import { LoadingSpin } from "./LoadingSpin"
+import { LoadingSpin } from "./loading-spin"
 
 export type Currency = 'UAH' | 'PLN' | 'USD' | 'EUR'
 
@@ -208,7 +208,7 @@ export default function CurrencyModalExport() {
   }
 
   if (!isOpen){
-    return <p onClick={() => setIsOpen(true)} className="underline cursor-pointer">{preferred_currency}</p>
+    return <p onClick={() => setIsOpen(true)} className="cursor-pointer text-black underline decoration-1 underline-offset-4 transition-all">{preferred_currency}</p>
   }
   return (
     <CurrencyModal 
