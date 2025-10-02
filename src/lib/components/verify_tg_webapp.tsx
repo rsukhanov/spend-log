@@ -12,13 +12,15 @@ export default function VerifyTelegramWebApp({ children }: { children: React.Rea
   useEffect(() => {
     const verify = async () => {
       let rawInitData;
+      let tgWebApp;
       try {
         rawInitData = retrieveRawInitData();
+        tgWebApp = window.Telegram.WebApp;
       } catch (error) {
         window.location.href = TELEGRAM_BOT_URL!;
         return;
       }
-      if (!rawInitData) {
+      if (!rawInitData || !tgWebApp) {
         window.location.href = TELEGRAM_BOT_URL!;
         return;
       }
@@ -40,11 +42,11 @@ export default function VerifyTelegramWebApp({ children }: { children: React.Rea
         }
         setUser(data.user);
         setState("OK");
+        tgWebApp.ready();
       } catch (e) {
         setState(`Internal error: ${e}`);
       }
     };
-
     verify();
   }, []);
 
@@ -56,7 +58,5 @@ export default function VerifyTelegramWebApp({ children }: { children: React.Rea
     return <p>{state}</p>;
   }
   
-
-  return <p>Verifying Telegram Web App...</p>;
-  
+  return null;
 }
