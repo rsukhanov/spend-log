@@ -52,24 +52,23 @@ interface CurrencyModalProps {
   isLoading?: boolean
 }
 
-export function CurrencyModal({ isOpen, onCurrencySelect, preferredCurrency, onClose, isLoading }: CurrencyModalProps) {
+export function CurrencyModal({ 
+  isOpen, 
+  onCurrencySelect, 
+  preferredCurrency, 
+  onClose, 
+  isLoading,
+ }: CurrencyModalProps) {
   const [selectedCurrency, setSelectedCurrency] = useState<Currency | undefined>(preferredCurrency)
-  const [isMounted, setIsMounted] = useState(false)
-
-  // Для предотвращения гидратации
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
 
   const handleCurrencySelect = (currency: Currency) => {
+    if (isLoading) return;
+    if (selectedCurrency === currency) return;
     setSelectedCurrency(currency)
-    // Небольшая задержка для анимации перед вызовом колбэка
     setTimeout(() => {
       onCurrencySelect(currency)
     }, 300)
   }
-
-  if (!isMounted) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {
@@ -77,7 +76,7 @@ export function CurrencyModal({ isOpen, onCurrencySelect, preferredCurrency, onC
         onClose();
     }}>
       <DialogContent 
-        className="sm:max-w-md"
+        className="sm:max-w-md border-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => {
           e.preventDefault()
@@ -93,6 +92,10 @@ export function CurrencyModal({ isOpen, onCurrencySelect, preferredCurrency, onC
         }}
         showCloseButton={preferredCurrency ? true : false}
       >
+        {isLoading && (
+          <div className="absolute inset-0 z-50 bg-black/30 rounded-lg flex items-center justify-center">
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">
             Выберите валюту
@@ -199,15 +202,12 @@ export default function CurrencyModalExport() {
       return;
     }
     setPreferedCurrency(currency)
-    handleClose();
-  }
-
-  const handleClose = () => {
     setIsOpen(false);
     setIsLoading(false);
   }
 
   if (!isOpen){
+    if (isLoading) return <LoadingSpin />
     return <p onClick={() => setIsOpen(true)} className="cursor-pointer text-black underline decoration-1 underline-offset-4 transition-all">{preferred_currency}</p>
   }
   return (
@@ -215,7 +215,7 @@ export default function CurrencyModalExport() {
       isOpen={isOpen}
       onCurrencySelect={handleCurrencySelect}
       preferredCurrency={preferred_currency}
-      onClose={handleClose}
+      onClose={() => setIsOpen(false)}
       isLoading={isLoading}
     />
   )

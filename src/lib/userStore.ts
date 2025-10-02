@@ -22,8 +22,8 @@ interface UserStore {
 
 export const useUserStore = create<UserStore>((set) => ({
   id: '',
-  name: '',
-  photo_url: '',
+  name: undefined,
+  photo_url: undefined,
   preferred_currency: undefined,
   setUser: ({id, photo_url, name, preferred_currency}) => set({ 
     id, 

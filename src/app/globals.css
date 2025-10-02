@@ -20,6 +20,10 @@
   }
 } */
 
+html{
+  background: #ffffff;
+}
+
 body {
   max-width: 410px;
   margin: 0 auto;
