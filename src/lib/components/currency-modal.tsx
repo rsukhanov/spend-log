@@ -76,7 +76,7 @@ export function CurrencyModal({
         onClose();
     }}>
       <DialogContent 
-        className="sm:max-w-md border-0"
+        className="border-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => {
           e.preventDefault()

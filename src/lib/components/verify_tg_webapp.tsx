@@ -15,7 +15,7 @@ export default function VerifyTelegramWebApp({ children }: { children: React.Rea
       let tgWebApp;
       try {
         rawInitData = retrieveRawInitData();
-        tgWebApp = window.Telegram.WebApp;
+        tgWebApp = (window as any).Telegram.WebApp;
       } catch (error) {
         window.location.href = TELEGRAM_BOT_URL!;
         return;

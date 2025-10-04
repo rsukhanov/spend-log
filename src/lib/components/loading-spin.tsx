@@ -1,4 +1,4 @@
-export const LoadingSpin = ({text}: {text: string}) => {
+export const LoadingSpin = ({text}: {text?: string}) => {
   return (
     <div className="flex items-center justify-center py-4">
       <div className="flex items-center space-x-3">

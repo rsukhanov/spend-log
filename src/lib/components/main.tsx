@@ -13,10 +13,9 @@ import {
   LabelList
 } from "recharts";
 import {LoadingSpin} from "@lib/components/loading-spin";
+import ExpenseModal from "@lib/components/expense-modal";
 
-const ANIMATION_DURATION = 750;
-
-interface Expense {
+export interface Expense {
   id: string;
   date: string;
   amount_original: number;
@@ -41,7 +40,7 @@ const MONTH_NAMES = [
   "январь", "февраль", "март", "апрель", "май", "июнь",
   "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"
 ];
-const formatDate = (date: Date) =>
+export const formatDate = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 
 const TIME_RANGE_DAYS = {
@@ -109,8 +108,8 @@ const TIME_RANGE_DAYS = {
     end(now: Date){
       const end = new Date(now);
       const day = end.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      end.setDate(now.getDate() - diff);
+      const diff = 7 - day; 
+      end.setDate(now.getDate() + diff);
       end.setHours(23, 59, 59, 999);
       return end;
     },
@@ -137,7 +136,7 @@ const TIME_RANGE_DAYS = {
 };
 
 
-const roundTo = (value: number, afterComma: number): number => {
+export const roundTo = (value: number, afterComma: number): number => {
   const factor = Math.pow(10, afterComma);
   return Math.round(value * factor) / factor;
 }
@@ -148,6 +147,7 @@ export default function Main() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('0');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const getExpenses = async () => {
     setLoading(true);
@@ -191,17 +191,17 @@ export default function Main() {
     });
     return Object.entries(sums).map(([key, value]) => ({
       name: CATEGORY_NAMES[key] || key,
-      value,
+      value: roundTo(value, 2),
       color: CATEGORY_COLORS[key] || CATEGORY_COLORS.OTHER
     }));
   }, [filteredExpenses]);
 
-  const totalAmount = useMemo(() => {
-    return chartData.reduce((sum, entry) => sum + entry.value, 0);
+   const listData = useMemo(() => {
+    return chartData.sort((a, b) => b.value - a.value);
   }, [chartData]);
 
-  const listData = useMemo(() => {
-    return chartData.sort((a, b) => b.value - a.value);    
+  const totalAmount = useMemo(() => {
+    return chartData.reduce((sum, entry) => sum + entry.value, 0);
   }, [chartData]);
 
   return (
@@ -239,75 +239,112 @@ export default function Main() {
       </div>
 
 
-          <Card className="w-full gap-0  min-h-full rounded-2xl border border-gray-100 bg-white shadow-sm px-4">
-            {loading 
-          ? (<LoadingSpin text="Loading..."/>) 
-          : ( <>
-            <CardHeader className="text-center">
-              <div className="flex flex-col items-center gap-1">
-                <div className="text-3xl font-bold text-gray-900">
-                  {roundTo(totalAmount, 0).toLocaleString()} {preferred_currency}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS]?.label(new Date())}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center w-full p-0">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      innerRadius={45}
-                      paddingAngle={1}
-                      animationBegin={0}
-                      animationDuration={ANIMATION_DURATION}
+      <Card className="w-full gap-0  min-h-full rounded-2xl border border-gray-100 bg-white shadow-sm px-4">
+        {loading 
+      ? (<LoadingSpin text="Loading..."/>) 
+      : ( <>
+        <CardHeader className="text-center">
+          <div className="flex flex-col items-center gap-1">
+            <div className="text-3xl font-bold text-gray-900">
+              {roundTo(totalAmount, 0).toLocaleString()} {preferred_currency}
+            </div>
+            <div className="text-sm text-gray-500">
+              {TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS]?.label(new Date())}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center w-full p-0">
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={45}
+                  paddingAngle={1}
+                  animationBegin={0}
+                  animationDuration={750}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                    <LabelList
+                    dataKey="value"
+                    position="inside"
+                    formatter={(label: React.ReactNode) => {
+                      const val = typeof label === "number" ? label : Number(label);
+                      if (!val || isNaN(val)) return '';
+                      const percent = (val * 100 / totalAmount);
+                      if (percent < 5) return '';
+                      return `${roundTo(percent, 1)}%`;
+                    }}
+                    fill="#fff"
+                    fontSize={14}
+                    fontWeight="bold"
+                  />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+          </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground">Нет данных для отображения</p>
+          )}
+          <ul className="w-full mt-3 space-y-2">
+            {listData.map((entry, index) => (
+              <li key={index}>
+                <button
+                  onClick={() => setSelectedCategory(entry.name)}
+                  className="flex w-full items-center justify-between text-sm p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="font-medium text-gray-800">{entry.name}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="font-semibold">
+                      {roundTo(entry.value, 0)} {preferred_currency}
+                    </span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 opacity-60 group-hover:opacity-100 transition"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                       <LabelList
-                        dataKey="value"
-                        position="inside"
-                        formatter={(val: number) => {
-                          const percent = (val * 100 / totalAmount)
-                          if (percent < 5) return '';
-                          return roundTo(percent, 1) + '%'
-                        }}
-                        fill="#fff"
-                        fontSize={14}
-                        fontWeight="bold"
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
                       />
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-              </ResponsiveContainer>
-              ) : (
-                <p className="text-sm text-muted-foreground">Нет данных для отображения</p>
-              )}
-              <ul className="w-full mt-3 space-y-1">
-                {listData.map((entry, index) => (
-                  <li key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: entry.color }} 
-                      />
-                      <span>{entry.name}</span>
-                    </div>
-                    <span className="font-medium">{roundTo(entry.value, 0)} {preferred_currency}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            </>)}
-          </Card> 
+                    </svg>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+        </CardContent>
+        </>)}
+      </Card> 
+      {selectedCategory && (
+        <ExpenseModal
+          isOpen={!!selectedCategory}
+          category={selectedCategory}
+          filteredCategoryExpenses={filteredExpenses.filter(exp => selectedCategory === CATEGORY_NAMES[exp.main_category])}
+          totalAmount={listData.find(item => item.name === selectedCategory)?.value || 0}
+          preferred_currency={preferred_currency!}
+          onClose={() => setSelectedCategory(null)}
+        />
+      )}
     </main>
   );
 }
@@ -320,7 +357,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   PERSONAL: '#8B5CF6',
   ENTERTAINMENT: '#FACC15',
   TRAVEL: '#06B6D4',
-  // FINANCIAL: '#84CC16',
   FINANCIAL: '#15803D',
   FAMILY_PETS: '#EC4899',
   OTHER: '#6B7280'
