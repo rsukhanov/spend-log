@@ -109,7 +109,7 @@ const TIME_RANGE_DAYS = {
       const end = new Date(now);
       const day = end.getDay();
       const diff = 7 - day; 
-      end.setDate(now.getDate() + diff);
+      end.setDate(this.start(now).getDate() + diff);
       end.setHours(23, 59, 59, 999);
       return end;
     },
@@ -152,8 +152,12 @@ export default function Main() {
   const getExpenses = async () => {
     setLoading(true);
     const res = await fetch(`api/expenses`, { 
-      method: 'GET',
-      headers: { 'userId': id }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        'userId': id, 
+        'preferred_currency': preferred_currency 
+      }),
     });
     if (!res.ok) {
       return;
@@ -374,4 +378,3 @@ const CATEGORY_NAMES: Record<string, string> = {
   FAMILY_PETS: 'Семья',
   OTHER: 'Другое'
 }
-
