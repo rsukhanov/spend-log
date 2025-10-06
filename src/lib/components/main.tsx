@@ -347,6 +347,7 @@ export default function Main() {
           totalAmount={listData.find(item => item.name === selectedCategory)?.value || 0}
           preferred_currency={preferred_currency!}
           onClose={() => setSelectedCategory(null)}
+          onExpenseUpdated={getExpenses}
         />
       )}
     </main>

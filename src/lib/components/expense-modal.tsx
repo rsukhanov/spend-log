@@ -6,11 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from "@lib/components/ui/dialog";
 import { Button } from "@lib/components/ui/button";
 import { Expense, formatDate, roundTo } from "@lib/components/main";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LabelList } from "recharts";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 
 const COLORS = ["#4F46E5", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
@@ -23,6 +25,7 @@ export default function ExpenseModal({
   totalAmount,
   preferred_currency,
   onClose,
+  onExpenseUpdated
 }: {
   isOpen: boolean;
   category: string;
@@ -30,7 +33,37 @@ export default function ExpenseModal({
   preferred_currency: string;
   totalAmount: number;
   onClose: () => void;
+  onExpenseUpdated: (updatedExpense: Expense) => void;
 }) {
+
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEditClick = (expense: Expense) => {
+    setEditingExpense(expense);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveExpense = async (updatedExpense: Expense) => {
+    const res = await fetch(`/api/expenses/update`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedExpense)
+    });
+    if (!res.ok) {
+      alert("Ошибка при сохранении траты");
+      return;
+    }
+    const savedExpense = await res.json() as Expense;
+    if(!savedExpense) {
+      alert("Ошибка при сохранении траты");
+      return;
+    }
+    onExpenseUpdated(savedExpense);
+    setIsEditModalOpen(false);
+    setEditingExpense(null);
+  };
+  
 
   const subcategoryData = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -50,26 +83,44 @@ export default function ExpenseModal({
   },[filteredCategoryExpenses]);
 
   return (
+  <>
     <Dialog
       open={isOpen}
-      onOpenChange={() => {
-        if (isOpen && onClose) onClose();
+      onOpenChange={(open) => {
+        if (!open && !isEditModalOpen) {
+          onClose();
+        }
       }}
     >
       <DialogContent
-        className="border-0 rounded-2xl bg-white p-6 shadow-2xl"
+        className="border-0 rounded-2xl bg-white p-6 shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={(e) => {
+       onInteractOutside={(e) => {
+          if (isEditModalOpen) {
+            e.preventDefault();
+            return;
+          }
           e.preventDefault();
           onClose();
         }}
         onEscapeKeyDown={(e) => {
+          if (isEditModalOpen) {
+            e.preventDefault();
+            return;
+          }
           e.preventDefault();
           onClose();
         }}
-        showCloseButton={true}
+        showCloseButton={false}
       >
-        <DialogHeader className="mb-2">
+
+      <DialogClose
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-all text-2xl"
+      >
+        ✕
+      </DialogClose>
+
+        <DialogHeader className="mb-2 shrink-0">
           <DialogTitle className="text-lg font-semibold">
             {category} — {totalAmount.toLocaleString()} {preferred_currency}
           </DialogTitle>
@@ -79,7 +130,7 @@ export default function ExpenseModal({
         </DialogHeader>
 
         {subcategoryData.length > 0 && (
-          <div className="w-full h-40 mb-6">
+          <div className="w-full h-40 mb-6 shrink-0">
             <ResponsiveContainer>
               <PieChart>
                 <Pie
@@ -127,7 +178,7 @@ export default function ExpenseModal({
           </div>
         )}
 
-        <ul className="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <ul className="space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 pr-1">
           {listData.length > 0 ? (
             listData.map((exp) => {
               const badgeColor = subcategoryData.find(sub => sub.name === EXPENSE_SUB_CATEGORIES[exp.sub_category])?.color;
@@ -171,9 +222,8 @@ export default function ExpenseModal({
                     size="sm"
                     variant="outline"
                     className="text-xs rounded-lg border-gray-300 hover:bg-main hover:text-white transition w-8 h-8 p-0 flex items-center justify-center"
-                    onClick={() => alert("Редактирование траты " + exp.amount_in_preferred_currency + " " + preferred_currency)}
+                    onClick={() => handleEditClick(exp)}
                   >
-                    {/* Иконка карандаша */}
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                     </svg>
@@ -189,22 +239,30 @@ export default function ExpenseModal({
         </ul>
       </DialogContent>
     </Dialog>
-  );
+     <EditExpenseModal
+        isOpen={isEditModalOpen}
+        expense={editingExpense}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingExpense(null);
+        }}
+        onSave={handleSaveExpense}
+      />
+  </>);
 }
 
 
-
-const EXPENSE_SUB_CATEGORIES: Record<string, string> = {
+export const EXPENSE_SUB_CATEGORIES: Record<string, string> = {
   // --- ЖИЛЬЕ И КОММУНАЛЬНЫЕ УСЛУГИ ---
   "RENT": "Аренда жилья",
   "MORTGAGE": "Ипотека / Кредит на жильё",
   "UTILITIES": "Коммунальные услуги",
-  "SUBSCRIPTIONS": "Подписки (Netflix, Spotify и т.д.)",
-  "INSURANCE": "Страхование (жилья, жизни)",
-  "REPAIRS": "Ремонт и обслуживание жилья",
+  "SUBSCRIPTIONS": "Подписки",
+  "INSURANCE": "Страхование",
+  "REPAIRS": "Ремонт и обслуживание",
 
   // --- ТРАНСПОРТ ---
-  "TAXI": "Такси / Поделиться поездкой",
+  "TAXI": "Такси",
   "PUBLIC_TRANSPORT": "Общественный транспорт",
   "FUEL": "Топливо / Зарядка авто",
   "CAR_MAINTENANCE": "Обслуживание и ремонт авто",
@@ -214,24 +272,24 @@ const EXPENSE_SUB_CATEGORIES: Record<string, string> = {
   // --- ЕДА И ПИТАНИЕ ---
   "GROCERIES": "Продукты питания",
   "DINING_OUT": "Рестораны / Кафе",
-  "COFFEE_SNACKS": "Кофе / Снеки на ходу",
+  "COFFEE_SNACKS": "Кофе / Снеки",
   "FAST_FOOD": "Фастфуд",
 
   // --- ЗДОРОВЬЕ И УХОД ---
   "MEDICINES": "Лекарства / Аптека",
   "DOCTOR": "Приём врача / Медицинские услуги",
-  "PERSONAL_CARE_SERVICES": "Уход за собой (Салон, Барбершоп)",
+  "PERSONAL_CARE_SERVICES": "Уход за собой",
 
   // --- ЛИЧНЫЕ РАСХОДЫ И РАЗВИТИЕ ---
   "CLOTHING": "Одежда и обувь",
   "COSMETICS": "Косметика и гигиена",
   "PERSONAL_SHOPPING": "Личные покупки",
   "SELF_EDUCATION": "Самообразование / Курсы",
-  "SELF_DEVELOPMENT": "Саморазвитие / Книги",
+  "SELF_DEVELOPMENT": "Саморазвитие",
 
   // --- ДОСУГ И РАЗВЛЕЧЕНИЯ ---
   "MOVIES_CONCERTS": "Кино / Концерты / Театр",
-  "COMPUTER_GAMES": "Компьютерные игры / Игровой контент",
+  "COMPUTER_GAMES": "Компьютерные игры",
   "ALCOHOL": "Алкоголь",
   "SMOKING": "Курение / Вейпинг",
   "GAMBLING": "Азартные игры / Лотереи",
@@ -248,16 +306,257 @@ const EXPENSE_SUB_CATEGORIES: Record<string, string> = {
   "LOAN": "Выплата кредитов / Долгов",
   "TAXES": "Налоги и сборы",
   "SAVINGS_INVESTMENTS": "Накопления / Инвестиции",
-  "BANK_FEES": "Банковские комиссии / Обслуживание счета",
+  "BANK_FEES": "Банковские переводы, комиссии",
 
   // --- СЕМЬЯ И БЛИЗКИЕ ---
   "CHILDREN": "Детские товары и расходы",
-  "EDUCATION": "Образование (школа, секции)",
-  "HOME_PETS": "Домашние животные / Товары для них",
+  "EDUCATION": "Образование / Секции",
+  "HOME_PETS": "Домашние животные",
   "DONATIONS_PRESENTS": "Подарки / Пожертвования",
 
   // --- НЕПРЕДВИДЕННЫЕ ---
-  "FORCED_PURCHASES": "Вынужденные покупки / Неотложка",
+  "FORCED_PURCHASES": "Вынужденные покупки",
   "EMOTIONAL_PURCHASES": "Эмоциональные / Спонтанные покупки",
   "OTHER": "Прочее / Неизвестно",
 };
+
+
+
+
+
+function EditExpenseModal({ 
+  isOpen, 
+  expense, 
+  onClose, 
+  onSave 
+}: { 
+  isOpen: boolean; 
+  expense: Expense | null;
+  onClose: () => void;
+  onSave: (expense: Expense) => void;
+}) {
+  const [merchant, setMerchant] = useState(expense?.merchant || "");
+  const [subCategory, setSubCategory] = useState(expense?.sub_category || "");
+
+  if (!expense) return null;
+
+  const availableSubCategories = expenses_categories[expense.main_category];
+
+  const handleSave = () => {
+    if (expense.merchant === merchant && expense.sub_category === subCategory) {
+      onClose();
+      return;
+    }
+    const updatedExpense = {
+      ...expense,
+      merchant: merchant ? merchant : expense.merchant,
+      sub_category: subCategory ? subCategory : expense.sub_category,
+    };
+    onSave(updatedExpense);
+  };
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        className="border-0 rounded-2xl bg-white p-6 shadow-2xl max-w-3/4"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          onClose();
+        }}
+        showCloseButton={false}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-all text-2xl z-50"
+        >
+          ✕
+        </button>
+
+        <DialogHeader className="">
+          <DialogTitle className="text-lg font-semibold">
+            Редактировать трату
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-500">
+            Изменение магазина и подкатегории
+          </DialogDescription>
+          <div className="mt-2 p-2 bg-gray-50 rounded-lg text-center">
+            <span className="font-medium text-gray-700">
+              {roundTo(expense.amount_in_preferred_currency, 1)} {expense.currency_original}
+            </span>
+            {" | "}
+            <span className="font-medium text-gray-700">
+              {formatDate(new Date(expense.date))}
+            </span>
+            {/* <span className="block text-xs text-gray-600 mt-1">
+              {CATEGORY_NAMES[expense.main_category]}
+            </span> */}
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Магазин / Место покупки
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              placeholder={expense.merchant === 'to_ask' || expense.merchant === 'unknown' ? "Неизвестно" : expense.merchant}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Подкатегория ({CATEGORY_NAMES[expense.main_category]})
+            </label>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all bg-white"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {availableSubCategories.map((subCat) => (
+                <option key={subCat} value={subCat}>
+                  {EXPENSE_SUB_CATEGORIES[subCat] || subCat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="outline"
+              className="flex-1 border-gray-300 hover:bg-gray-50"
+              onClick={onClose}
+            >
+              Отмена
+            </Button>
+            <Button
+              className="flex-1 bg-main hover:bg-main/90 text-white"
+              onClick={handleSave}
+            >
+              Сохранить
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+const expenses_categories: Record<string, string[]> = {
+  // аренда, коммуналка
+   HOUSING: [ 
+      "RENT",
+      "MORTGAGE",
+      'UTILITIES',
+      "SUBSCRIPTIONS",
+      "INSURANCE",
+      "REPAIRS"
+   ],
+
+  // такси, транспорт, авто
+  TRANSPORT: [
+    "TAXI",
+    "PUBLIC_TRANSPORT",
+    "FUEL",
+    "CAR_MAINTENANCE",
+    "CAR_INSURANCE",
+    "PARKING"
+  ],
+
+  // продукты, рестораны
+  FOOD: [
+    "GROCERIES",
+    "DINING_OUT",
+    "COFFEE_SNACKS",
+    "FAST_FOOD"
+  ],
+
+  // медицина, аптека
+  HEALTH: [
+    "MEDICINES",
+    "DOCTOR",
+    "PERSONAL_CARE_SERVICES"
+  ],
+  
+  // одежда, уход, личные покупки
+  PERSONAL: [
+    "CLOTHING",
+    "COSMETICS",
+    "PERSONAL_SHOPPING",
+    "SELF_EDUCATION",
+    "SELF_DEVELOPMENT"
+  ],
+  
+  // досуг, игры, развлечения
+  ENTERTAINMENT: [
+    "MOVIES_CONCERTS",
+    "COMPUTER_GAMES",
+    "ALCOHOL",
+    "SMOKING",
+    "GAMBLING",
+    "HOBBIES",
+  ],
+  
+  // поездки, отдых
+  TRAVEL: [
+    "HOTELS",
+    "FLIGHTS",
+    "TOURS_ACTIVITIES",
+    "TRAVEL_RESTAURANTS",
+    "TRAVEL_TRANSPORT",
+  ],
+  
+  // кредиты, налоги, сбережения
+  FINANCIAL: [
+    "LOAN",
+    "TAXES",
+    "SAVINGS_INVESTMENTS",
+    "BANK_FEES",
+  ],
+
+  // дети, семья, животные
+  FAMILY_PETS: [
+    "CHILDREN",
+    "EDUCATION",
+    "HOME_PETS",
+    "DONATIONS_PRESENTS",
+  ],
+
+  OTHER: [
+    "FORCED_PURCHASES",
+    "EMOTIONAL_PURCHASES",
+    "OTHER",
+  ]
+}
+
+
+const CATEGORY_NAMES: Record<string, string> = {
+  HOUSING: 'Жилье',
+  TRANSPORT: 'Транспорт',
+  FOOD: 'Еда',
+  HEALTH: 'Здоровье',
+  PERSONAL: 'Личное',
+  ENTERTAINMENT: 'Развлечения',
+  TRAVEL: 'Путешествия',
+  FINANCIAL: 'Финансы',
+  FAMILY_PETS: 'Семья',
+  OTHER: 'Другое'
+}
