@@ -195,7 +195,8 @@ export default function CurrencyModalExport() {
     const res = await fetch(`/api/currency`, { 
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: id, currency })
+      body: JSON.stringify({ userId: id, currency }),
+      credentials: 'include'
     });
     if (!res.ok) {
       alert("Ошибка при смене валюты");

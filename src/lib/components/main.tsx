@@ -158,6 +158,7 @@ export default function Main() {
         'userId': id, 
         'preferred_currency': preferred_currency 
       }),
+      credentials: 'include'
     });
     if (!res.ok) {
       return;

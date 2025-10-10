@@ -48,7 +48,8 @@ export default function ExpenseModal({
     const res = await fetch(`/api/expenses/update`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedExpense)
+      body: JSON.stringify(updatedExpense),
+      credentials: 'include'
     });
     if (!res.ok) {
       alert("Ошибка при сохранении траты");
@@ -95,7 +96,7 @@ export default function ExpenseModal({
       <DialogContent
         className="border-0 rounded-2xl bg-white p-6 shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
         onOpenAutoFocus={(e) => e.preventDefault()}
-       onInteractOutside={(e) => {
+        onInteractOutside={(e) => {
           if (isEditModalOpen) {
             e.preventDefault();
             return;
@@ -368,7 +369,6 @@ function EditExpenseModal({
         className="border-0 rounded-2xl bg-white p-6 shadow-2xl max-w-3/4"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => {
-          e.preventDefault();
           e.stopPropagation();
         }}
         onEscapeKeyDown={(e) => {
