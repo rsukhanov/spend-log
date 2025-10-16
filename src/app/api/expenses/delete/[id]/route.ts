@@ -2,7 +2,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
 export async function DELETE(
   request: Request, 
-  { params }: { params: { id: string } }) 
+  { params }: { params: Promise<{ id: string }> }) 
 {
   const { id } = await params;
   const cookie = request.headers.get("cookie");

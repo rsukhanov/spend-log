@@ -2,7 +2,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
 export async function GET(
   request: Request,
-  {params}: {params: { currency: string }}
+  {params}: {params: Promise<{ currency: string }>}
 ) {
   const { currency } = await params;
   const cookie = request.headers.get("cookie");
