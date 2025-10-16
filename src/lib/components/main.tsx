@@ -70,10 +70,8 @@ const TIME_RANGE_DAYS = {
       return start;
     },
     end(now: Date) {
-      const end = new Date(now);
-      const day = end.getDay();
-      const diff = day === 0 ? 7 : day;
-      end.setDate(now.getDate() - diff);
+      const end = new Date(this.start(now));
+      end.setDate(end.getDate() + 6);
       end.setHours(23, 59, 59, 999);
       return end;
     },
@@ -106,10 +104,8 @@ const TIME_RANGE_DAYS = {
       return start;
     },
     end(now: Date){
-      const end = new Date(now);
-      const day = end.getDay();
-      const diff = 7 - day; 
-      end.setDate(this.start(now).getDate() + diff);
+      const end = new Date(this.start(now));
+      end.setDate(end.getDate() + 6);
       end.setHours(23, 59, 59, 999);
       return end;
     },
@@ -151,13 +147,9 @@ export default function Main() {
 
   const getExpenses = async () => {
     setLoading(true);
-    const res = await fetch(`api/expenses`, { 
-      method: 'POST',
+    const res = await fetch(`api/expenses/${preferred_currency}`, { 
+      method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        'userId': id, 
-        'preferred_currency': preferred_currency 
-      }),
       credentials: 'include'
     });
     if (!res.ok) {
@@ -192,7 +184,7 @@ export default function Main() {
     const sums: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
       const cat = exp.main_category || "OTHER";
-      sums[cat] = (sums[cat] || 0) + roundTo(exp.amount_in_preferred_currency, 1);
+      sums[cat] = (sums[cat] || 0) + exp.amount_in_preferred_currency;
     });
     return Object.entries(sums).map(([key, value]) => ({
       name: CATEGORY_NAMES[key] || key,
@@ -251,7 +243,7 @@ export default function Main() {
         <CardHeader className="text-center">
           <div className="flex flex-col items-center gap-1">
             <div className="text-3xl font-bold text-gray-900">
-              {roundTo(totalAmount, 0).toLocaleString()} {preferred_currency}
+              {roundTo(totalAmount, 1).toLocaleString()} {preferred_currency}
             </div>
             <div className="text-sm text-gray-500">
               {TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS]?.label(new Date())}
@@ -315,7 +307,7 @@ export default function Main() {
 
                   <div className="flex items-center gap-2 text-gray-600">
                     <span className="font-semibold">
-                      {roundTo(entry.value, 0)} {preferred_currency}
+                      {roundTo(entry.value, 1)} {preferred_currency}
                     </span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -344,11 +336,15 @@ export default function Main() {
         <ExpenseModal
           isOpen={!!selectedCategory}
           category={selectedCategory}
+
           filteredCategoryExpenses={filteredExpenses.filter(exp => selectedCategory === CATEGORY_NAMES[exp.main_category])}
+
           totalAmount={listData.find(item => item.name === selectedCategory)?.value || 0}
+
           preferred_currency={preferred_currency!}
           onClose={() => setSelectedCategory(null)}
           onExpenseUpdated={getExpenses}
+          onExpenseDeleted={getExpenses}
         />
       )}
     </main>

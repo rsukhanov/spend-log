@@ -25,7 +25,8 @@ export default function ExpenseModal({
   totalAmount,
   preferred_currency,
   onClose,
-  onExpenseUpdated
+  onExpenseUpdated,
+  onExpenseDeleted
 }: {
   isOpen: boolean;
   category: string;
@@ -34,6 +35,7 @@ export default function ExpenseModal({
   totalAmount: number;
   onClose: () => void;
   onExpenseUpdated: (updatedExpense: Expense) => void;
+  onExpenseDeleted: (deletedExpenseId: string) => void;
 }) {
 
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -64,6 +66,22 @@ export default function ExpenseModal({
     setIsEditModalOpen(false);
     setEditingExpense(null);
   };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    const res = await fetch(`/api/expenses/delete/${expenseId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      alert("Ошибка при удалении траты");
+      return;
+    }
+    
+    onExpenseDeleted(expenseId);
+    setIsEditModalOpen(false);
+    setEditingExpense(null);
+  };
+
   
 
   const subcategoryData = useMemo(() => {
@@ -248,6 +266,7 @@ export default function ExpenseModal({
           setEditingExpense(null);
         }}
         onSave={handleSaveExpense}
+        onDelete={handleDeleteExpense}
       />
   </>);
 }
@@ -329,16 +348,19 @@ function EditExpenseModal({
   isOpen, 
   expense, 
   onClose, 
-  onSave 
+  onSave,
+  onDelete
 }: { 
   isOpen: boolean; 
   expense: Expense | null;
   onClose: () => void;
   onSave: (expense: Expense) => void;
+  onDelete: (expenseId: string) => void;
 }) {
   const [merchant, setMerchant] = useState(expense?.merchant || "");
   const [subCategory, setSubCategory] = useState(expense?.sub_category || "");
 
+  if (!isOpen)  return null;
   if (!expense) return null;
 
   const availableSubCategories = expenses_categories[expense.main_category];
@@ -354,6 +376,11 @@ function EditExpenseModal({
       sub_category: subCategory ? subCategory : expense.sub_category,
     };
     onSave(updatedExpense);
+  };
+
+  const handleDelete = () => {
+    onDelete(expense.id);
+    onClose();
   };
 
   return (
@@ -439,12 +466,19 @@ function EditExpenseModal({
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button
+            {/* <Button
               variant="outline"
               className="flex-1 border-gray-300 hover:bg-gray-50"
               onClick={onClose}
             >
               Отмена
+            </Button> */}
+            <Button
+              // size="sm"
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleDelete}
+            >
+              Удалить
             </Button>
             <Button
               className="flex-1 bg-main hover:bg-main/90 text-white"

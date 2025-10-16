@@ -1,11 +1,14 @@
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
-export async function POST(request: Request) {
-  const { preferred_currency } = await request.json();
+export async function DELETE(
+  request: Request, 
+  { params }: { params: { id: string } }) 
+{
+  const { id } = await params;
   const cookie = request.headers.get("cookie");
 
-  const res = await fetch(`${BACKEND_URL}/expenses/${preferred_currency}`, {
-    method: 'GET',
+  const res = await fetch(`${BACKEND_URL}/expenses/${id}`, {
+    method: 'DELETE',
     headers: { 
       'Content-Type': 'application/json', 
       'Cookie': cookie ?? '' 

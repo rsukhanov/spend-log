@@ -192,10 +192,9 @@ export default function CurrencyModalExport() {
 
   const handleCurrencySelect = async (currency: Currency) => {
     setIsLoading(true);
-    const res = await fetch(`/api/currency`, { 
+    const res = await fetch(`/api/currency/${currency}`, { 
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: id, currency }),
       credentials: 'include'
     });
     if (!res.ok) {

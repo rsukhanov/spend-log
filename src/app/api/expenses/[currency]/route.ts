@@ -1,18 +1,22 @@
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
-export async function PATCH(request: Request) {
-  const {id, merchant, sub_category} = await request.json();
+export async function GET(
+  request: Request,
+  {params}: {params: { currency: string }}
+) {
+  const { currency } = await params;
   const cookie = request.headers.get("cookie");
-  const res = await fetch(`${BACKEND_URL}/expenses/${id}`, {
-    method: 'PATCH',
+
+  const res = await fetch(`${BACKEND_URL}/expenses/${currency}`, {
+    method: 'GET',
     headers: { 
       'Content-Type': 'application/json', 
-      'Cookie': cookie ?? ''
+      'Cookie': cookie ?? '' 
     },
-    body: JSON.stringify({ merchant, sub_category }),
   });
-  const body = await res.json();
   
+  const body = await res.json();
+
   return new Response(JSON.stringify(body), {
     status: res.status,
     headers: {
