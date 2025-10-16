@@ -10,6 +10,14 @@ export async function POST(request: Request) {
       'Content-Type': 'application/json', 
       'Cookie': cookie ?? '' 
     },
-  })
-  return res;
+  });
+  
+  const body = await res.json();
+  
+  return new Response(JSON.stringify(body), {
+    status: res.status,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 }
