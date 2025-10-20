@@ -29,7 +29,7 @@ export interface Expense {
 }
 
 const TIME_RANGES = [
-  { value: '-30', label: 'Last Month' },
+  { value: '-30', label: 'Last Months' },
   { value: '-7', label: 'Last Week' },
   { value: '0', label: 'Today' },
   { value: '+7', label: 'This Week' },
@@ -40,24 +40,36 @@ const MONTH_NAMES = [
   "январь", "февраль", "март", "апрель", "май", "июнь",
   "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"
 ];
+// const MONTH_SLUGS = [
+//   "jan", "feb", "mar", "apr", "may", "jun",
+//   "jul", "aug", "sep", "oct", "nov", "dec"
+// ]
+// const MONTH_SLUGS = [
+//   "янв", "фев", "мар", "апр", "май", "июн",
+//   "июл", "авг", "сен", "окт", "ноя", "дек"
+// ]
 export const formatDate = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 
 const TIME_RANGE_DAYS = {
-  "-30": {
-    start(now: Date) {
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+ "-30": {
+    start(now: Date, monthOffset: number = -1) {
+      const start = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
       start.setHours(0, 0, 0, 0);
       return start;
     },
-    end(now: Date) {
-      const end = new Date(now.getFullYear(), now.getMonth(), 0); 
+    end(now: Date, monthOffset: number = -1) {
+      const end = new Date(now.getFullYear(), now.getMonth() + monthOffset + 1, 0); 
       end.setHours(23, 59, 59, 999);
       return end;
     },
-    label(now: Date) {
-      const month = MONTH_NAMES[(now.getMonth() - 1 + 12) % 12];
-      return `Траты за ${month}`;
+    label(now: Date, monthOffset: number = -1) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+      const month = MONTH_NAMES[targetDate.getMonth()];
+      const year = targetDate.getFullYear();
+      const currentYear = now.getFullYear();
+      
+      return `Траты за ${month}${year !== currentYear ? ` ${year}` : ''}`;
     },
   },
   "-7": {
@@ -143,6 +155,7 @@ export default function Main() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('0');
+  const [selectedPastMonth, setSelectedPastMonth] = useState<number>(-1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const getExpenses = async () => {
@@ -160,6 +173,37 @@ export default function Main() {
     setLoading(false)
   }
 
+  const availableMonths = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Собираем все уникальные месяцы из трат
+    const monthsSet = new Set<string>();
+    
+    expenses.forEach(expense => {
+      const expenseDate = new Date(expense.date);
+      const expenseMonth = expenseDate.getMonth();
+      const expenseYear = expenseDate.getFullYear();
+      
+      // Добавляем только прошлые месяцы
+      if (expenseYear < currentYear || (expenseYear === currentYear && expenseMonth < currentMonth)) {
+        monthsSet.add(`${expenseYear}-${expenseMonth}`);
+      }
+    });
+    
+    // Преобразуем в массив и сортируем по убыванию (новые месяцы первыми)
+    return Array.from(monthsSet)
+      .map(monthStr => {
+        const [year, month] = monthStr.split('-').map(Number);
+        return { year, month };
+      })
+      .sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        return b.month - a.month;
+      });
+  }, [expenses]);
+
   useEffect(() => {
     getExpenses();
   }, [preferred_currency]);
@@ -170,14 +214,21 @@ export default function Main() {
     const range = TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS];
     if (!range) return expenses;
 
-    const from = range.start(now);
-    const to = range.end(now);
+    let from, to;
+
+    if (timeRange === '-30' && selectedPastMonth) {
+      from = range.start(now, selectedPastMonth);
+      to = range.end(now, selectedPastMonth);
+    } else {
+      from = range.start(now);
+      to = range.end(now);
+    }
 
     return expenses.filter(exp => {
       const expDate = new Date(exp.date);
       return expDate >= from && expDate <= to;
     });
-  }, [expenses, timeRange]);
+  }, [expenses, timeRange, selectedPastMonth]);
 
 
   const chartData = useMemo(() => {
@@ -211,6 +262,40 @@ export default function Main() {
             if (index % 2 === 0) gridRow = 1;
             else gridRow = 2;
             const isActive = timeRange === range.value;
+            if (timeRange === '-30' && range.value === '-30') {
+              return (
+                <select 
+                  onChange={(e) => setSelectedPastMonth(Number(e.target.value))}
+                  value={selectedPastMonth}
+                  key={range.value}
+                  style={{ 
+                  gridColumn: gridColumn,                  
+                  gridRow: gridRow,
+                }}
+                className={`
+                  px-3 py-2 font-medium rounded-xl transition-all text-center
+          min-h-[44px] flex items-center justify-center
+                  ${isActive 
+                    ? "bg-indigo-100 text-black font-bold shadow-md border border-indigo-200 text-base" 
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-700 text-[0.82rem]"
+                  }
+                `}
+                >
+                  {availableMonths.map(({year, month}) => {
+                    const value = month - (new Date().getMonth()) + (year - new Date().getFullYear()) * 12;
+                    const label = `${MONTH_NAMES[month]} ${year}`;
+                    return (
+                      <option 
+                        key={`${year}-${month}`} 
+                        value={value}               
+                      >
+                        {label}
+                      </option>
+                    )
+                  })}
+                </select>
+              )
+            }
             return (
               <button 
                 key={range.value} 
@@ -246,7 +331,10 @@ export default function Main() {
               {roundTo(totalAmount, 1).toLocaleString()} {preferred_currency}
             </div>
             <div className="text-sm text-gray-500">
-              {TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS]?.label(new Date())}
+              {selectedPastMonth 
+                ? TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS]?.label(new Date(), selectedPastMonth)
+                : TIME_RANGE_DAYS[timeRange as keyof typeof TIME_RANGE_DAYS]?.label(new Date())
+              }
             </div>
           </div>
         </CardHeader>
