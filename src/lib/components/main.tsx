@@ -157,6 +157,7 @@ export default function Main() {
   const [timeRange, setTimeRange] = useState('0');
   const [selectedPastMonth, setSelectedPastMonth] = useState<number>(-1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const getExpenses = async () => {
     setLoading(true);
@@ -178,7 +179,6 @@ export default function Main() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    // Собираем все уникальные месяцы из трат
     const monthsSet = new Set<string>();
     
     expenses.forEach(expense => {
@@ -186,13 +186,11 @@ export default function Main() {
       const expenseMonth = expenseDate.getMonth();
       const expenseYear = expenseDate.getFullYear();
       
-      // Добавляем только прошлые месяцы
       if (expenseYear < currentYear || (expenseYear === currentYear && expenseMonth < currentMonth)) {
         monthsSet.add(`${expenseYear}-${expenseMonth}`);
       }
     });
     
-    // Преобразуем в массив и сортируем по убыванию (новые месяцы первыми)
     return Array.from(monthsSet)
       .map(monthStr => {
         const [year, month] = monthStr.split('-').map(Number);
@@ -262,38 +260,112 @@ export default function Main() {
             if (index % 2 === 0) gridRow = 1;
             else gridRow = 2;
             const isActive = timeRange === range.value;
+            
             if (timeRange === '-30' && range.value === '-30') {
+              const currentLabel = availableMonths.find(({year, month}) => {
+                const value = month - (new Date().getMonth()) + (year - new Date().getFullYear()) * 12;
+                return value === selectedPastMonth;
+              });
+
               return (
-                <select 
-                  onChange={(e) => setSelectedPastMonth(Number(e.target.value))}
-                  value={selectedPastMonth}
+                <div 
                   key={range.value}
                   style={{ 
-                  gridColumn: gridColumn,                  
-                  gridRow: gridRow,
-                }}
-                className={`
-                  px-3 py-2 font-medium rounded-xl transition-all text-center
-          min-h-[44px] flex items-center justify-center
-                  ${isActive 
-                    ? "bg-indigo-100 text-black font-bold shadow-md border border-indigo-200 text-base" 
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-700 text-[0.82rem]"
-                  }
-                `}
+                    gridColumn: gridColumn,                  
+                    gridRow: gridRow,
+                  }}
+                  className="relative"
                 >
-                  {availableMonths.map(({year, month}) => {
-                    const value = month - (new Date().getMonth()) + (year - new Date().getFullYear()) * 12;
-                    const label = `${MONTH_NAMES[month]} ${year}`;
-                    return (
-                      <option 
-                        key={`${year}-${month}`} 
-                        value={value}               
-                      >
-                        {label}
-                      </option>
-                    )
-                  })}
-                </select>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className={`
+                      w-full px-2 py-2 font-medium rounded-xl transition-all text-center
+                      min-h-[44px] flex items-center justify-center relative
+                      ${isActive 
+                        ? "bg-indigo-100 text-black shadow-md border border-indigo-200 text-base" 
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-700 text-[0.82rem]"
+                      }
+                    `}
+                  >
+                    <span className="flex-1 flex items-center justify-center gap-1">
+                      {currentLabel ? (
+                        <>
+                          <span className="font-medium">{MONTH_NAMES[currentLabel.month]}</span>
+                          {currentLabel.year !== new Date().getFullYear() && (
+                            <span className="text-[0.6rem] opacity-60 flex-shrink-0">{currentLabel.year}</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="">{MONTH_NAMES[(new Date().getMonth() - 1 + 12) % 12]}</span>
+                      )}
+                      </span>
+                    <svg 
+                      className={`w-4 h-4 ml-1 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {isDropdownOpen && (
+                    <>
+                      {/* Overlay для закрытия при клике вне */}
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setIsDropdownOpen(false)}
+                      />
+                      
+                      {/* Dropdown меню */}
+                      <div className="absolute top-full left-0 right-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {availableMonths.map(({year, month}) => {
+                          const value = month - (new Date().getMonth()) + (year - new Date().getFullYear()) * 12;
+                          const label = `${MONTH_NAMES[month]}${year !== new Date().getFullYear() ? ` ${year}` : ''}`;
+                          const isSelected = value === selectedPastMonth;
+                          
+                          return (
+                            <button
+                              key={`${year}-${month}`}
+                              onClick={() => {
+                                setSelectedPastMonth(value);
+                                setTimeRange('-30');
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`
+                                w-full px-4 py-3 text-left text-sm transition-colors
+                                hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl
+                                flex items-center justify-between
+                                ${isSelected 
+                                  ? 'bg-indigo-50 text-indigo-600 font-medium' 
+                                  : 'text-gray-700'
+                                }
+                              `}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium">{MONTH_NAMES[month]}</span>
+                                {year !== new Date().getFullYear() && (
+                                  <span className="text-[0.6rem] opacity-60 flex-shrink-0">{year}</span>
+                                )}
+                              </div>
+                              {isSelected && (
+                                <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                        
+                        {availableMonths.length === 0 && (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            Нет доступных месяцев
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               )
             }
             return (
