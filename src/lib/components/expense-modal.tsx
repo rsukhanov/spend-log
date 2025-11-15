@@ -12,6 +12,8 @@ import { Button } from "@lib/components/ui/button";
 import { Expense, formatDate, roundTo } from "@lib/components/main";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LabelList } from "recharts";
 import { useEffect, useMemo, useState } from "react";
+import { SP } from "next/dist/shared/lib/utils";
+import { expenses_categories, CATEGORY_NAMES, EXPENSE_SUB_CATEGORIES} from "@lib/categories";
 
 
 const COLORS = ["#4F46E5", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
@@ -272,78 +274,6 @@ export default function ExpenseModal({
 }
 
 
-export const EXPENSE_SUB_CATEGORIES: Record<string, string> = {
-  // --- ЖИЛЬЕ И КОММУНАЛЬНЫЕ УСЛУГИ ---
-  "RENT": "Аренда жилья",
-  "MORTGAGE": "Ипотека / Кредит на жильё",
-  "UTILITIES": "Коммунальные услуги",
-  "SUBSCRIPTIONS": "Подписки",
-  "INSURANCE": "Страхование",
-  "REPAIRS": "Ремонт и обслуживание",
-
-  // --- ТРАНСПОРТ ---
-  "TAXI": "Такси",
-  "PUBLIC_TRANSPORT": "Общественный транспорт",
-  "FUEL": "Топливо / Зарядка авто",
-  "CAR_MAINTENANCE": "Обслуживание и ремонт авто",
-  "CAR_INSURANCE": "Страхование авто",
-  "PARKING": "Парковка и платные дороги",
-
-  // --- ЕДА И ПИТАНИЕ ---
-  "GROCERIES": "Продукты питания",
-  "DINING_OUT": "Рестораны / Кафе",
-  "COFFEE_SNACKS": "Кофе / Снеки",
-  "FAST_FOOD": "Фастфуд",
-
-  // --- ЗДОРОВЬЕ И УХОД ---
-  "MEDICINES": "Лекарства / Аптека",
-  "DOCTOR": "Приём врача / Медицинские услуги",
-  "PERSONAL_CARE_SERVICES": "Уход за собой",
-
-  // --- ЛИЧНЫЕ РАСХОДЫ И РАЗВИТИЕ ---
-  "CLOTHING": "Одежда и обувь",
-  "COSMETICS": "Косметика и гигиена",
-  "PERSONAL_SHOPPING": "Личные покупки",
-  "SELF_EDUCATION": "Самообразование / Курсы",
-  "SELF_DEVELOPMENT": "Саморазвитие",
-
-  // --- ДОСУГ И РАЗВЛЕЧЕНИЯ ---
-  "MOVIES_CONCERTS": "Кино / Концерты / Театр",
-  "COMPUTER_GAMES": "Компьютерные игры",
-  "ALCOHOL": "Алкоголь",
-  "SMOKING": "Курение / Вейпинг",
-  "GAMBLING": "Азартные игры / Лотереи",
-  "HOBBIES": "Хобби / Спортивный инвентарь",
-
-  // --- ПУТЕШЕСТВИЯ И ОТДЫХ ---
-  "HOTELS": "Проживание / Отели",
-  "FLIGHTS": "Авиабилеты / Поезда",
-  "TOURS_ACTIVITIES": "Туры / Экскурсии",
-  "TRAVEL_RESTAURANTS": "Питание в поездках",
-  "TRAVEL_TRANSPORT": "Транспорт в поездках",
-
-  // --- ФИНАНСЫ И ДОЛГИ ---
-  "LOAN": "Выплата кредитов / Долгов",
-  "TAXES": "Налоги и сборы",
-  "SAVINGS_INVESTMENTS": "Накопления / Инвестиции",
-  "BANK_FEES": "Банковские переводы, комиссии",
-
-  // --- СЕМЬЯ И БЛИЗКИЕ ---
-  "CHILDREN": "Детские товары и расходы",
-  "EDUCATION": "Образование / Секции",
-  "HOME_PETS": "Домашние животные",
-  "DONATIONS_PRESENTS": "Подарки / Пожертвования",
-
-  // --- НЕПРЕДВИДЕННЫЕ ---
-  "FORCED_PURCHASES": "Вынужденные покупки",
-  "EMOTIONAL_PURCHASES": "Эмоциональные / Спонтанные покупки",
-  "OTHER": "Прочее / Неизвестно",
-};
-
-
-
-
-
 function EditExpenseModal({ 
   isOpen, 
   expense, 
@@ -491,106 +421,4 @@ function EditExpenseModal({
       </DialogContent>
     </Dialog>
   );
-}
-
-
-const expenses_categories: Record<string, string[]> = {
-  // аренда, коммуналка
-   HOUSING: [ 
-      "RENT",
-      "MORTGAGE",
-      'UTILITIES',
-      "SUBSCRIPTIONS",
-      "INSURANCE",
-      "REPAIRS"
-   ],
-
-  // такси, транспорт, авто
-  TRANSPORT: [
-    "TAXI",
-    "PUBLIC_TRANSPORT",
-    "FUEL",
-    "CAR_MAINTENANCE",
-    "CAR_INSURANCE",
-    "PARKING"
-  ],
-
-  // продукты, рестораны
-  FOOD: [
-    "GROCERIES",
-    "DINING_OUT",
-    "COFFEE_SNACKS",
-    "FAST_FOOD"
-  ],
-
-  // медицина, аптека
-  HEALTH: [
-    "MEDICINES",
-    "DOCTOR",
-    "PERSONAL_CARE_SERVICES"
-  ],
-  
-  // одежда, уход, личные покупки
-  PERSONAL: [
-    "CLOTHING",
-    "COSMETICS",
-    "PERSONAL_SHOPPING",
-    "SELF_EDUCATION",
-    "SELF_DEVELOPMENT"
-  ],
-  
-  // досуг, игры, развлечения
-  ENTERTAINMENT: [
-    "MOVIES_CONCERTS",
-    "COMPUTER_GAMES",
-    "ALCOHOL",
-    "SMOKING",
-    "GAMBLING",
-    "HOBBIES",
-  ],
-  
-  // поездки, отдых
-  TRAVEL: [
-    "HOTELS",
-    "FLIGHTS",
-    "TOURS_ACTIVITIES",
-    "TRAVEL_RESTAURANTS",
-    "TRAVEL_TRANSPORT",
-  ],
-  
-  // кредиты, налоги, сбережения
-  FINANCIAL: [
-    "LOAN",
-    "TAXES",
-    "SAVINGS_INVESTMENTS",
-    "BANK_FEES",
-  ],
-
-  // дети, семья, животные
-  FAMILY_PETS: [
-    "CHILDREN",
-    "EDUCATION",
-    "HOME_PETS",
-    "DONATIONS_PRESENTS",
-  ],
-
-  OTHER: [
-    "FORCED_PURCHASES",
-    "EMOTIONAL_PURCHASES",
-    "OTHER",
-  ]
-}
-
-
-const CATEGORY_NAMES: Record<string, string> = {
-  HOUSING: 'Жилье',
-  TRANSPORT: 'Транспорт',
-  FOOD: 'Еда',
-  HEALTH: 'Здоровье',
-  PERSONAL: 'Личное',
-  ENTERTAINMENT: 'Развлечения',
-  TRAVEL: 'Путешествия',
-  FINANCIAL: 'Финансы',
-  FAMILY_PETS: 'Семья',
-  OTHER: 'Другое'
 }

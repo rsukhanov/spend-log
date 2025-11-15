@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import {LoadingSpin} from "@lib/components/loading-spin";
 import ExpenseModal from "@lib/components/expense-modal";
+import { CATEGORY_NAMES } from "@lib/categories";
 
 export interface Expense {
   id: string;
@@ -521,18 +522,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   TRAVEL: '#06B6D4',
   FINANCIAL: '#15803D',
   FAMILY_PETS: '#EC4899',
-  OTHER: '#6B7280'
-}
-
-const CATEGORY_NAMES: Record<string, string> = {
-  HOUSING: 'Жилье',
-  TRANSPORT: 'Транспорт',
-  FOOD: 'Еда',
-  HEALTH: 'Здоровье',
-  PERSONAL: 'Личное',
-  ENTERTAINMENT: 'Развлечения',
-  TRAVEL: 'Путешествия',
-  FINANCIAL: 'Финансы',
-  FAMILY_PETS: 'Семья',
-  OTHER: 'Другое'
+  OTHER: '#6B7280',
+  SPORT: '#E11D48',
 }
