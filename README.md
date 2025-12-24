@@ -1,25 +1,32 @@
-# 📱 SpendLog Frontend (Telegram WebApp)
+# 🎨 SpendLog Frontend
 
-This is the client-side application (Frontend) for **SpendLog** — a personal AI-powered financial assistant in Telegram.
-The project is built as a **Telegram WebApp** (TWA), allowing users to view analytics and manage expenses directly inside the messenger.
+The user interface for **SpendLog**, built as a **Telegram Mini App** using the latest web technologies. It provides a seamless, mobile-first experience for tracking expenses directly within Telegram.
 
-> 🤖 **Live Bot:** [@spends_log_bot](https://t.me/spends_log_bot)
-> ⚙️ **Backend Repository:** [github.com/rsukhanov/spend-log-b](https://github.com/rsukhanov/spend-log-b)
+## ✨ Features
 
-## ✨ Key Features
+* **Telegram Native Feel:** Fully integrated with Telegram via `@telegram-apps/sdk`.
+* **Modern UI/UX:** Built with **Radix UI** primitives and styled with **Tailwind CSS** for accessibility and performance.
+* **Data Visualization:** Interactive charts and graphs powered by **Recharts**.
+* **Global State Management:** Fast and scalable state handling using **Zustand**.
+* **Smooth Animations:** Enhanced user experience with `tw-animate-css`.
 
-- 📊 **Visualization:** Interactive charts and diagrams for expense categories.
-- 📅 **History:** Transaction feed with filtering by date and type.
-- 🔒 **Security:**
-    - The app is accessible **only** within Telegram.
-    - `Telegram Init Data` validation ensures requests cannot be forged.
-    - API protection via signature verification.
+## 🛠️ Tech Stack
 
-## 🛠 Tech Stack
+This project uses a cutting-edge stack to ensure performance and developer experience:
 
-- **Framework:** [Next.js 15] (App Router)
-- **UI Library:** [React]
-- **Styling:** [Tailwind CSS] + [shadcn/ui]
-- **State Management:** [Zustand]
-- **Integration:** Telegram WebApp SDK
-- **Icons:** Lucide React
+* **Core Framework:**
+    * **[Next.js 15]** (App Router)
+    * **[React]**
+    * **[TypeScript]**
+
+* **Styling & UI && Data:**
+    * **[Tailwind CSS v4]**
+    * **[Radix UI]**
+    * **[Lucide React]**
+    * **[Recharts]**
+
+* **State:**
+    * **[Zustand]**
+
+* **Integration:**
+    * **[Telegram Apps SDK]**
