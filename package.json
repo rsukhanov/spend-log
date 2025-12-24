@@ -1,6 +1,7 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "The frontend part of the Spendlog application created with Next.js and TypeScript. Created by Roman Sukhanov.",
   "private": true,
   "scripts": {
     "dev": "next dev",
