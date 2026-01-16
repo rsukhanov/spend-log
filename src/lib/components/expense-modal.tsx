@@ -290,20 +290,29 @@ function EditExpenseModal({
   const [subCategory, setSubCategory] = useState(expense?.sub_category || "");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (expense) {
+      setMerchant(expense.merchant || "");
+      setSubCategory(expense.sub_category || "");
+    }
+  }, [expense]);
+
   if (!isOpen)  return null;
   if (!expense) return null;
 
   const availableSubCategories = expenses_categories[expense.main_category];
 
+  const hasChanges = 
+    merchant !== expense.merchant || 
+    subCategory !== expense.sub_category;
+
   const handleSave = async () => {
-    if (expense.merchant === merchant && expense.sub_category === subCategory) {
-      onClose();
-      return;
-    }
+    if (!hasChanges) return;
+
     const updatedExpense = {
       ...expense,
-      merchant: merchant ? merchant : expense.merchant,
-      sub_category: subCategory ? subCategory : expense.sub_category,
+      merchant: merchant,
+      sub_category: subCategory,
     };
     setIsLoading(true);
     await onSave(updatedExpense);
@@ -320,35 +329,17 @@ function EditExpenseModal({
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open && !isLoading) {
-          onClose();
-        }
+        if (!open && !isLoading) onClose();
       }}
     >
       <DialogContent
         className="border-0 rounded-2xl bg-white p-6 shadow-2xl max-w-3/4"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={(e) => {
-          if (isLoading) {
-            e.preventDefault();
-            return;
-          }
-          e.stopPropagation();
-        }}
-        onEscapeKeyDown={(e) => {
-          e.preventDefault();
-          if (isLoading) {
-            return;
-          }
-          onClose();
-        }}
+        onInteractOutside={(e) => isLoading && e.preventDefault()}
+        onEscapeKeyDown={(e) => isLoading && e.preventDefault()}
         showCloseButton={false}
       >
-        {isLoading && (
-          <div className="absolute inset-0 z-50 bg-black/30 rounded-2xl flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
+        
         <button
           onClick={onClose}
           className={`absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-all text-2xl z-40 ${isLoading ? 'pointer-events-none opacity-30' : ''}`}
@@ -357,7 +348,7 @@ function EditExpenseModal({
           ✕
         </button>
 
-        <DialogHeader className="">
+        <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
             Редактировать трату
           </DialogTitle>
@@ -382,10 +373,9 @@ function EditExpenseModal({
             </label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all disabled:opacity-50 disabled:bg-gray-50"
               value={merchant}
               onChange={(e) => setMerchant(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
               placeholder={expense.merchant === 'to_ask' || expense.merchant === 'unknown' ? "Неизвестно" : expense.merchant}
               disabled={isLoading}
             />
@@ -396,10 +386,9 @@ function EditExpenseModal({
               Подкатегория ({CATEGORY_NAMES[expense.main_category]})
             </label>
             <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all bg-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all bg-white disabled:opacity-50 disabled:bg-gray-50"
               value={subCategory}
               onChange={(e) => setSubCategory(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
               disabled={isLoading}
             >
               {availableSubCategories.map((subCat) => (
@@ -418,7 +407,7 @@ function EditExpenseModal({
               disabled={isLoading}
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-2"/>
+                 <span className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-2"/>
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-2">
                   <path fillRule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.25 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.25-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-3.536 6.19a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v9.75a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75V9.216Zm4.5 0a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v9.75a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75V9.216Zm4.5 0a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v9.75a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75V9.216Z" clipRule="evenodd" />
@@ -428,12 +417,12 @@ function EditExpenseModal({
             </Button>
 
             <Button
-              className="flex-1 bg-main hover:bg-main/90 text-white shadow-md shadow-main/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex-1 bg-main hover:bg-main/90 text-white shadow-md shadow-main/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:bg-gray-400"
               onClick={handleSave}
-              disabled={isLoading}
+              disabled={isLoading || !hasChanges}
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"/>
+                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"/>
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-2">
                   <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .207 1.012l-7.5 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-15.28a.75.75 0 0 1 1.012-.207Z" clipRule="evenodd" />
