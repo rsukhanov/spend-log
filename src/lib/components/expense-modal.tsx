@@ -94,7 +94,7 @@ export default function ExpenseModal({
     });
     return Object.entries(totals).map(([name, value], index) => ({ 
       name, 
-      value,
+      value: roundTo(value, 2),
       color: COLORS[index % COLORS.length]
     }));
   }, [filteredCategoryExpenses]);
@@ -273,7 +273,6 @@ export default function ExpenseModal({
   </>);
 }
 
-
 function EditExpenseModal({ 
   isOpen, 
   expense, 
@@ -289,13 +288,14 @@ function EditExpenseModal({
 }) {
   const [merchant, setMerchant] = useState(expense?.merchant || "");
   const [subCategory, setSubCategory] = useState(expense?.sub_category || "");
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen)  return null;
   if (!expense) return null;
 
   const availableSubCategories = expenses_categories[expense.main_category];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (expense.merchant === merchant && expense.sub_category === subCategory) {
       onClose();
       return;
@@ -305,19 +305,22 @@ function EditExpenseModal({
       merchant: merchant ? merchant : expense.merchant,
       sub_category: subCategory ? subCategory : expense.sub_category,
     };
-    onSave(updatedExpense);
+    setIsLoading(true);
+    await onSave(updatedExpense);
+    setIsLoading(false);
   };
 
-  const handleDelete = () => {
-    onDelete(expense.id);
-    onClose();
+  const handleDelete = async () => {
+    setIsLoading(true);
+    await onDelete(expense.id);
+    setIsLoading(false);
   };
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) {
+        if (!open && !isLoading) {
           onClose();
         }
       }}
@@ -326,17 +329,30 @@ function EditExpenseModal({
         className="border-0 rounded-2xl bg-white p-6 shadow-2xl max-w-3/4"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => {
+          if (isLoading) {
+            e.preventDefault();
+            return;
+          }
           e.stopPropagation();
         }}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
+          if (isLoading) {
+            return;
+          }
           onClose();
         }}
         showCloseButton={false}
       >
+        {isLoading && (
+          <div className="absolute inset-0 z-50 bg-black/30 rounded-2xl flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-all text-2xl z-50"
+          className={`absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-all text-2xl z-40 ${isLoading ? 'pointer-events-none opacity-30' : ''}`}
+          disabled={isLoading}
         >
           ✕
         </button>
@@ -356,9 +372,6 @@ function EditExpenseModal({
             <span className="font-medium text-gray-700">
               {formatDate(new Date(expense.date))}
             </span>
-            {/* <span className="block text-xs text-gray-600 mt-1">
-              {CATEGORY_NAMES[expense.main_category]}
-            </span> */}
           </div>
         </DialogHeader>
 
@@ -369,11 +382,12 @@ function EditExpenseModal({
             </label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
               value={merchant}
               onChange={(e) => setMerchant(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               placeholder={expense.merchant === 'to_ask' || expense.merchant === 'unknown' ? "Неизвестно" : expense.merchant}
+              disabled={isLoading}
             />
           </div>
 
@@ -382,10 +396,11 @@ function EditExpenseModal({
               Подкатегория ({CATEGORY_NAMES[expense.main_category]})
             </label>
             <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main focus:border-transparent transition-all bg-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
               value={subCategory}
               onChange={(e) => setSubCategory(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              disabled={isLoading}
             >
               {availableSubCategories.map((subCat) => (
                 <option key={subCat} value={subCat}>
@@ -396,23 +411,17 @@ function EditExpenseModal({
           </div>
 
           <div className="flex gap-3 pt-4">
-            {/* <Button
-              variant="outline"
-              className="flex-1 border-gray-300 hover:bg-gray-50"
-              onClick={onClose}
-            >
-              Отмена
-            </Button> */}
             <Button
-              // size="sm"
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-red-400"
               onClick={handleDelete}
+              disabled={isLoading}
             >
               Удалить
             </Button>
             <Button
-              className="flex-1 bg-main hover:bg-main/90 text-white"
+              className="flex-1 bg-main hover:bg-main/90 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-main/70"
               onClick={handleSave}
+              disabled={isLoading}
             >
               Сохранить
             </Button>
