@@ -1,4 +1,4 @@
-Copyright (c) 2025 Roman Sukhanov
+Copyright (c) 2026 Roman Sukhanov
 
 This project (SpendLog Frontend) is a personal portfolio piece.
 
